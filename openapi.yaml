@@ -1,0 +1,84 @@
+openapi: 3.1.0
+info:
+  title: NovaForge Image Studios API
+  version: 0.1.0
+  description: Secure NovaForge gateway for Google Veo video generation.
+servers:
+  - url: https://novaforge.example.com
+    description: Replace with the deployed NovaForge Image Studios domain before importing into ChatGPT.
+components:
+  securitySchemes:
+    gatewayBearer:
+      type: http
+      scheme: bearer
+  schemas:
+    GenerateVideoRequest:
+      type: object
+      required: [prompt]
+      properties:
+        prompt:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        model:
+          type: string
+          enum: [veo-3.1-generate-preview, veo-3.1-fast-generate-preview]
+        resolution:
+          type: string
+          enum: [720p, 1080p, 4k]
+          default: 1080p
+        aspectRatio:
+          type: string
+          enum: ["16:9", "9:16"]
+          default: "16:9"
+        durationSeconds:
+          type: string
+          enum: ["4", "6", "8"]
+          default: "8"
+security:
+  - gatewayBearer: []
+paths:
+  /api/veo/generate:
+    post:
+      operationId: startVeoVideo
+      summary: Start a Google Veo 3.1 generation job.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateVideoRequest'
+      responses:
+        '202':
+          description: Veo job accepted.
+  /api/veo/status:
+    get:
+      operationId: getVeoVideoStatus
+      summary: Check a Veo generation job.
+      parameters:
+        - in: query
+          name: operation
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current job status and a protected download URL when ready.
+  /api/veo/download:
+    get:
+      operationId: downloadVeoVideo
+      summary: Download a completed Veo-generated MP4 through NovaForge.
+      parameters:
+        - in: query
+          name: operation
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Generated MP4 video.
+          content:
+            video/mp4:
+              schema:
+                type: string
+                format: binary
