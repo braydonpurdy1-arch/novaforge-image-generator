@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Merge the <queries> block into the consuming Android app's manifest.
+  It allows package discovery for openApp() on Android package-visibility
+  restricted devices. Image handoff still uses explicit user-driven intents.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries>
+        <package android:name="com.kvadgroup.photostudio_pro" />
+        <intent>
+            <action android:name="android.intent.action.EDIT" />
+            <data android:mimeType="image/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="image/*" />
+        </intent>
+    </queries>
+</manifest>
