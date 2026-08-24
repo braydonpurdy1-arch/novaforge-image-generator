@@ -21,6 +21,10 @@ export class GeminiReasoningProvider {
   }
 
   analyze(request: GeminiReasoningRequest): Promise<GeminiReasoningResponse> {
-    return this.options.transport({ model: this.model, prompt: request.prompt, inputAssetIds: request.inputAssetIds });
+    return this.options.transport({
+      model: this.model,
+      prompt: request.prompt,
+      ...(request.inputAssetIds ? { inputAssetIds: request.inputAssetIds } : {})
+    });
   }
 }
