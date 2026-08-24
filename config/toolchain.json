@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "name": "NovaForge Image Studios",
+  "pipeline": [
+    {
+      "id": "generate-edit",
+      "type": "ai-image",
+      "providers": [
+        "chatgpt-image",
+        "black-forest-labs-flux",
+        "seedream",
+        "gemini",
+        "higgsfield",
+        "fal",
+        "picsart",
+        "canva",
+        "magnific"
+      ]
+    },
+    {
+      "id": "reference-locks",
+      "type": "guardrail",
+      "rules": [
+        "Never modify a user-locked face, subject, vehicle part, wing, background, composition or other locked region unless explicitly instructed.",
+        "Treat the locked source as immutable and create derivatives instead of destructive replacements.",
+        "Apply requested edits only to the named region or property whenever technically possible."
+      ]
+    },
+    {
+      "id": "photostudio-pro",
+      "type": "manual-external-postprocess",
+      "optional": true,
+      "platform": "android",
+      "packageName": "com.kvadgroup.photostudio_pro",
+      "allowedByDefault": [
+        "crop",
+        "exposure",
+        "tone",
+        "colour",
+        "sharpen",
+        "cleanup",
+        "local-adjustments",
+        "finishing"
+      ],
+      "requiresExplicitUserInstruction": [
+        "identity-change",
+        "face-reshape",
+        "body-reshape",
+        "composition-rewrite",
+        "locked-region-modification"
+      ],
+      "handoff": {
+        "preferredIntent": "android.intent.action.EDIT",
+        "fallbackIntent": "android.intent.action.SEND",
+        "mimeType": "image/*",
+        "grantReadUriPermission": true
+      }
+    }
+  ]
+}
