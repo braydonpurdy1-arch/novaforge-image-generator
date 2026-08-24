@@ -48,6 +48,7 @@ export interface OutputRequirements {
   qualityTier: QualityTier;
   requiresTextAccuracy?: boolean;
   requiresVideo?: boolean;
+  budgetCredits?: number;
 }
 
 export interface GenerationRequest {

@@ -1,4 +1,5 @@
 import type { GenerationRequest, Operation } from "../domain/types.js";
+import type { CostEstimate } from "../cost/cost-policy.js";
 
 export type ProviderLocality = "LOCAL" | "REMOTE";
 export type ProviderKind = "SEEDREAM" | "OPENAI_IMAGE" | "HIGGSFIELD" | "FLUX" | "GENERIC";
@@ -27,6 +28,7 @@ export interface ImageProvider {
   capabilities(): ProviderCapabilities;
   preflight(request: GenerationRequest): Promise<ProviderPreflight>;
   execute(plan: ProviderExecutionPlan): Promise<ProviderResult>;
+  estimateCost?(plan: ProviderExecutionPlan): Promise<CostEstimate | undefined>;
 }
 
 export interface RoutingDecision { providerId: string; score: number; reasons: string[]; }

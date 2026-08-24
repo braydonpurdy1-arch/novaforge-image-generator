@@ -26,3 +26,7 @@ export * from "./chat/compile-contract-with-preset.js";
 export * from "./provenance/types.js";
 export * from "./provenance/jsonl-ledger.js";
 export * from "./orchestration/generation-orchestrator.js";
+export * from "./assets/types.js";
+export * from "./assets/local-asset-registry.js";
+export * from "./cost/cost-policy.js";
+export * from "./jobs/job-registry.js";
