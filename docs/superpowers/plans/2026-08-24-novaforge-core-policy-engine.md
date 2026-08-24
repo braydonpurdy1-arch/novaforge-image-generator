@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the typed NovaForge request, lock, policy, normalization, and preflight foundation that every image/video workflow uses.
+**Goal:** Build the typed NovaForge request, lock, policy, normalization, privacy, and preflight foundation that every image/video workflow uses.
 
-**Architecture:** Implement a provider-neutral TypeScript core. Raw user instructions are normalized into a strict `GenerationRequest`; the reference policy engine compiles hard/soft locks and allowed deltas; preflight rejects contradictory, unsupported, or privacy-unsafe requests before any provider call.
+**Architecture:** Implement a provider-neutral TypeScript core. Raw user instructions are normalized into a strict `GenerationRequest`; the reference policy engine compiles hard/soft locks and allowed deltas; privacy handling and preflight reject contradictory, unsupported, or unsafe requests before any provider call.
 
 **Tech Stack:** Node.js 20+, TypeScript 5.x, Vitest, npm.
 
@@ -15,6 +15,8 @@
 - Locked means locked; hard-lock violations fail closed.
 - Delta edits preserve everything not explicitly allowed to change.
 - `LOCAL_ONLY` requests may never route to remote providers.
+- `REMOTE_REDACTED` may use a remote provider only after the configured redaction plan has been applied.
+- Explicit provider requirements such as “use Seedream” are represented separately from ordinary preferences.
 - Provider credentials must never be stored in source, prompts, tests, or provenance.
 - No biometric identity lookup against external databases.
 - No provider-specific logic in UI-facing request contracts.
@@ -138,10 +140,10 @@ git commit -m "chore: bootstrap NovaForge TypeScript core"
 - [ ] **Step 1: Write the compile-time/runtime contract test**
 
 ```ts
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import type { GenerationRequest } from "../../src/domain/types";
 
-it("accepts a strict delta edit request", () => {
+it("accepts a strict delta edit request with an explicit provider requirement", () => {
   const request: GenerationRequest = {
     requestId: "req-1",
     intent: "change stairs only",
@@ -152,11 +154,14 @@ it("accepts a strict delta edit request", () => {
     allowedChanges: [{ target: "stairs", transformation: "white marble with thin gold lines", acceptableVariance: 0.05, geometryMayChange: false, colorMayChange: true, lightingMayChange: false, textureMayChange: true }],
     forbiddenChanges: ["face", "pose", "wings"],
     outputRequirements: { aspectRatio: "3:4", qualityTier: "MASTER" },
+    preferredProvider: "seedream",
+    providerRequired: true,
     qualityTier: "MASTER",
     privacyMode: "REMOTE_ALLOWED"
   };
 
   expect(request.operation).toBe("DELTA_EDIT");
+  expect(request.providerRequired).toBe(true);
 });
 ```
 
@@ -167,7 +172,7 @@ Expected: FAIL because domain types do not exist.
 
 - [ ] **Step 3: Implement exact types**
 
-Create enums as string unions matching the design spec. Use `roles: Array<"identity" | "face" | "profile" | "hair" | "expression" | "clothing" | "pose" | "composition" | "scene" | "object">` on `SourceAsset`; optional provider/model fields must use exact optional properties rather than nullable strings.
+Create string unions matching the design spec. Use `roles: Array<"identity" | "face" | "profile" | "hair" | "expression" | "clothing" | "pose" | "composition" | "scene" | "object">` on `SourceAsset`. `GenerationRequest` includes optional `preferredProvider`, optional `preferredModel`, and `providerRequired: boolean` defaulting to false when compiled from raw input.
 
 - [ ] **Step 4: Re-export the domain contract**
 
@@ -198,18 +203,18 @@ git commit -m "feat: define NovaForge generation contracts"
 
 **Interfaces:**
 - Consumes: `RawImageRequest`, `GenerationRequest`.
-- Produces: `class ReferencePolicyEngine { compile(raw: RawImageRequest): GenerationRequest; validate(request: GenerationRequest): PolicyValidation }`.
+- Produces: `class ReferencePolicyEngine { compile(raw: RawImageRequest): Promise<GenerationRequest>; validate(request: GenerationRequest): PolicyValidation }`.
 
 - [ ] **Step 1: Write failing tests for strict preservation**
 
 ```ts
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { ReferencePolicyEngine } from "../../src/policy/reference-policy-engine";
 
 const engine = new ReferencePolicyEngine();
 
-it("defaults unspecified areas to preserved for DELTA_EDIT", () => {
-  const result = engine.compile({
+it("defaults unspecified areas to preserved for DELTA_EDIT", async () => {
+  const result = await engine.compile({
     requestId: "r1",
     intent: "change stairs only",
     operation: "DELTA_EDIT",
@@ -224,8 +229,8 @@ it("defaults unspecified areas to preserved for DELTA_EDIT", () => {
   expect(result.allowedChanges).toHaveLength(1);
 });
 
-it("rejects an allowed change that conflicts with a hard lock", () => {
-  const request = engine.compile({
+it("rejects an allowed change that conflicts with a hard lock", async () => {
+  const request = await engine.compile({
     requestId: "r2",
     intent: "change face",
     operation: "DELTA_EDIT",
@@ -250,9 +255,10 @@ Expected: FAIL because engine is missing.
 Rules:
 - Preserve explicit hard locks verbatim.
 - For `DELTA_EDIT`, append `UNSPECIFIED_REGIONS` to `forbiddenChanges`.
-- Convert requested changes into `AllowedChange` defaults with `acceptableVariance: 0.05` and all geometry/lighting flags false unless explicitly requested.
+- Convert requested changes into `AllowedChange` defaults with `acceptableVariance: 0.05` and geometry/lighting changes false unless explicitly requested.
 - Do not infer face retouching from “clean up”, “sharpen”, or “enhance”.
 - If a requested target overlaps a hard lock scope, validation returns `BLOCKED_BY_POLICY`.
+- Preserve explicit provider preference/requirement fields without allowing them to override hard locks or privacy mode.
 
 - [ ] **Step 4: Verify tests**
 
@@ -316,7 +322,55 @@ git commit -m "feat: normalize ambiguous image edit instructions"
 
 ---
 
-### Task 5: Implement GenerationPreflight
+### Task 5: Implement privacy redaction policy
+
+**Files:**
+- Create: `src/privacy/privacy-policy.ts`
+- Create: `tests/privacy/privacy-policy.test.ts`
+- Modify: `src/index.ts`
+
+**Interfaces:**
+- Produces: `applyPrivacyPolicy(request: GenerationRequest, plan: RedactionPlan): PrivacyPreparedRequest`.
+
+- [ ] **Step 1: Write failing privacy tests**
+
+```ts
+it("leaves REMOTE_ALLOWED request unchanged", () => {
+  const prepared = applyPrivacyPolicy(remoteAllowedRequest, { redactAssetIds: [], removeMetadataKeys: [] });
+  expect(prepared.redactionApplied).toBe(false);
+});
+
+it("requires redaction before REMOTE_REDACTED can leave the device", () => {
+  const prepared = applyPrivacyPolicy(remoteRedactedRequest, { redactAssetIds: ["private-ref"], removeMetadataKeys: ["gps"] });
+  expect(prepared.redactionApplied).toBe(true);
+  expect(prepared.request.sourceAssets.find(a => a.id === "private-ref")).toBeUndefined();
+});
+```
+
+- [ ] **Step 2: Run tests to verify failure**
+
+Run: `npm test -- tests/privacy/privacy-policy.test.ts`
+Expected: FAIL.
+
+- [ ] **Step 3: Implement deterministic redaction**
+
+For `REMOTE_REDACTED`, remove configured asset IDs and metadata keys before routing. If a removed asset is required by a hard lock, return `NEEDS_USER_INPUT` rather than silently weakening the request. `LOCAL_ONLY` performs no remote preparation at all.
+
+- [ ] **Step 4: Verify**
+
+Run: `npm test -- tests/privacy/privacy-policy.test.ts && npm run typecheck`
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/privacy/privacy-policy.ts tests/privacy/privacy-policy.test.ts src/index.ts
+git commit -m "feat: enforce NovaForge privacy modes"
+```
+
+---
+
+### Task 6: Implement GenerationPreflight
 
 **Files:**
 - Create: `src/preflight/generation-preflight.ts`
@@ -326,17 +380,23 @@ git commit -m "feat: normalize ambiguous image edit instructions"
 **Interfaces:**
 - Produces: `runPreflight(request: GenerationRequest, context: PreflightContext): PreflightResult` with status `READY | NEEDS_USER_INPUT | UNSUPPORTED | BLOCKED_BY_POLICY`.
 
-- [ ] **Step 1: Write failing privacy/capability tests**
+- [ ] **Step 1: Write failing privacy/capability/provider tests**
 
 ```ts
-it("blocks LOCAL_ONLY when only remote providers are available", () => {
+it("returns UNSUPPORTED when LOCAL_ONLY has no local provider", () => {
   const result = runPreflight(localOnlyRequest, { providers: [{ id: "remote", locality: "REMOTE", operations: ["EDIT"] }] });
-  expect(result.status).toBe("BLOCKED_BY_POLICY");
+  expect(result.status).toBe("UNSUPPORTED");
 });
 
 it("returns UNSUPPORTED when no provider supports the operation", () => {
   const result = runPreflight(outpaintRequest, { providers: [{ id: "x", locality: "REMOTE", operations: ["GENERATE"] }] });
   expect(result.status).toBe("UNSUPPORTED");
+});
+
+it("returns UNSUPPORTED when an explicitly required provider class is unavailable", () => {
+  const result = runPreflight(seedreamRequiredRequest, { providers: [{ id: "openai-image", locality: "REMOTE", operations: ["EDIT"] }] });
+  expect(result.status).toBe("UNSUPPORTED");
+  expect(result.reasons).toContain("REQUIRED_PROVIDER_UNAVAILABLE");
 });
 ```
 
@@ -347,7 +407,7 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement deterministic preflight**
 
-Validate source presence, contradictory locks, aspect ratio syntax, privacy locality, operation support, and required references. Return reasons as stable machine-readable codes such as `LOCAL_ONLY_REMOTE_PROVIDER`, `OPERATION_UNSUPPORTED`, `MISSING_SOURCE_ASSET`, `LOCK_CONFLICT`.
+Validate source presence/readability, contradictory locks, aspect ratio/output dimensions, privacy locality, operation support, required references/masks, explicit provider requirements, and whether `REMOTE_REDACTED` has a completed redaction result. Return stable reason codes including `LOCAL_PROVIDER_UNAVAILABLE`, `OPERATION_UNSUPPORTED`, `MISSING_SOURCE_ASSET`, `LOCK_CONFLICT`, `REQUIRED_PROVIDER_UNAVAILABLE`, and `REDACTION_REQUIRED`.
 
 - [ ] **Step 4: Run full verification**
 
