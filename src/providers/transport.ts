@@ -1,5 +1,3 @@
-export type ProviderRetention = "EPHEMERAL" | "RETAINED" | "UNKNOWN";
-
 export interface ProviderMediaBinding { id: string; uri: string; }
 export interface ProviderTransportRequest {
   payload: Record<string, unknown>;
@@ -12,7 +10,7 @@ export interface TransportResponse {
 }
 export type ProviderTransport = (request: ProviderTransportRequest) => Promise<TransportResponse>;
 
-export function normalizeRetention(metadata?: Record<string, unknown>): ProviderRetention {
+export function normalizeRetention(metadata?: Record<string, unknown>): "EPHEMERAL" | "RETAINED" | "UNKNOWN" {
   const value = metadata?.retention;
   return value === "EPHEMERAL" || value === "RETAINED" || value === "UNKNOWN" ? value : "UNKNOWN";
 }
