@@ -12,3 +12,14 @@ export function redactRemoteText(input: string): string {
     .replace(UNIX_PATH, match => match.startsWith(" ") ? " [REDACTED_PATH]" : "[REDACTED_PATH]")
     .replace(SECRET_ASSIGNMENT, (_m, key: string) => `${key}=[REDACTED]`);
 }
+
+export function redactRemoteValue<T>(value: T): T {
+  if (typeof value === "string") return redactRemoteText(value) as T;
+  if (Array.isArray(value)) return value.map(item => redactRemoteValue(item)) as T;
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .map(([key, child]) => [key, redactRemoteValue(child)] as const);
+    return Object.fromEntries(entries) as T;
+  }
+  return value;
+}
