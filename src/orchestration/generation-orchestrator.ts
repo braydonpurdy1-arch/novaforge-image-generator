@@ -1,3 +1,4 @@
+import type { ProviderRetention } from "../assets/types.js";
 import type { RawImageRequest } from "../domain/types.js";
 import type { ImageProvider, ProviderExecutionPlan, ProviderResult } from "../providers/types.js";
 import type { ReferencePolicyEngine } from "../policy/reference-policy-engine.js";
@@ -28,8 +29,14 @@ export interface GenerationOutcome {
   qc?: QcReport;
   repairPlan?: RepairPlan;
   costDecision?: CostDecision;
+  providerRetention?: ProviderRetention;
   provenanceRecorded: boolean;
   reasons: string[];
+}
+
+function providerRetentionFrom(result: ProviderResult): ProviderRetention | undefined {
+  const value = result.metadata.providerRetention;
+  return value === "EPHEMERAL" || value === "RETAINED" || value === "UNKNOWN" ? value : undefined;
 }
 
 export class GenerationOrchestrator {
@@ -95,6 +102,7 @@ export class GenerationOrchestrator {
     const qc = await this.options.qc.evaluate(request, providerResult, this.options.evaluators);
     const repairPlan = qc.overall === "FAIL" ? planRepair(request, qc) : undefined;
     const providerJobId = typeof providerResult.metadata.jobId === "string" ? providerResult.metadata.jobId : undefined;
+    const providerRetention = providerRetentionFrom(providerResult);
 
     await this.options.ledger.append({
       requestId: request.requestId,
@@ -125,6 +133,7 @@ export class GenerationOrchestrator {
       qc,
       ...(repairPlan ? { repairPlan } : {}),
       costDecision,
+      ...(providerRetention ? { providerRetention } : {}),
       provenanceRecorded: true,
       reasons: []
     };

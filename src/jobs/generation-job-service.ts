@@ -55,7 +55,8 @@ export class GenerationJobService {
         providerId: outcome.providerId,
         model: outcome.model,
         assetIds: outcome.assetIds,
-        costDecision: outcome.costDecision
+        costDecision: outcome.costDecision,
+        ...(outcome.providerRetention ? { providerRetention: outcome.providerRetention } : {})
       });
     }
 
