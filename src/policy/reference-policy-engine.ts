@@ -35,7 +35,8 @@ export class ReferencePolicyEngine {
         ...(raw.outputRequirements?.width !== undefined ? { width: raw.outputRequirements.width } : {}),
         ...(raw.outputRequirements?.height !== undefined ? { height: raw.outputRequirements.height } : {}),
         ...(raw.outputRequirements?.requiresTextAccuracy !== undefined ? { requiresTextAccuracy: raw.outputRequirements.requiresTextAccuracy } : {}),
-        ...(raw.outputRequirements?.requiresVideo !== undefined ? { requiresVideo: raw.outputRequirements.requiresVideo } : {})
+        ...(raw.outputRequirements?.requiresVideo !== undefined ? { requiresVideo: raw.outputRequirements.requiresVideo } : {}),
+        ...(raw.outputRequirements?.budgetCredits !== undefined ? { budgetCredits: raw.outputRequirements.budgetCredits } : {})
       },
       qualityTier: raw.outputRequirements?.qualityTier ?? "STANDARD",
       privacyMode: raw.privacyMode,

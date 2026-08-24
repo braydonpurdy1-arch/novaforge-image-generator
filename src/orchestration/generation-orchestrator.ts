@@ -1,5 +1,5 @@
 import type { RawImageRequest } from "../domain/types.js";
-import type { ImageProvider, ProviderResult } from "../providers/types.js";
+import type { ImageProvider, ProviderExecutionPlan, ProviderResult } from "../providers/types.js";
 import type { ReferencePolicyEngine } from "../policy/reference-policy-engine.js";
 import type { ModelRouter } from "../routing/model-router.js";
 import type { GenerationQcEngine } from "../qc/generation-qc-engine.js";
@@ -7,6 +7,7 @@ import type { QcEvaluator, QcReport } from "../qc/types.js";
 import type { ProvenanceLedger } from "../provenance/types.js";
 import { runPreflight } from "../preflight/generation-preflight.js";
 import { planRepair, type RepairPlan } from "../qc/targeted-repair-planner.js";
+import { evaluateCostPolicy, type CostDecision } from "../cost/cost-policy.js";
 
 export interface GenerationOrchestratorOptions {
   policy: ReferencePolicyEngine;
@@ -17,13 +18,16 @@ export interface GenerationOrchestratorOptions {
   evaluators: QcEvaluator[];
 }
 
+export interface GenerationRunOptions { costApproved?: boolean; }
+
 export interface GenerationOutcome {
-  status: "PASS" | "WARN" | "FAIL" | "BLOCKED" | "UNSUPPORTED";
+  status: "PASS" | "WARN" | "FAIL" | "BLOCKED" | "UNSUPPORTED" | "WAITING_APPROVAL";
   providerId?: string;
   model?: string;
   assetIds: string[];
   qc?: QcReport;
   repairPlan?: RepairPlan;
+  costDecision?: CostDecision;
   provenanceRecorded: boolean;
   reasons: string[];
 }
@@ -31,7 +35,7 @@ export interface GenerationOutcome {
 export class GenerationOrchestrator {
   constructor(private readonly options: GenerationOrchestratorOptions) {}
 
-  async run(rawRequest: RawImageRequest): Promise<GenerationOutcome> {
+  async run(rawRequest: RawImageRequest, runOptions: GenerationRunOptions = {}): Promise<GenerationOutcome> {
     const request = this.options.policy.compile(rawRequest);
     const validation = this.options.policy.validate(request);
     if (validation.status !== "READY") {
@@ -63,11 +67,29 @@ export class GenerationOrchestrator {
       return { status: providerPreflight.status === "UNSUPPORTED" ? "UNSUPPORTED" : "BLOCKED", assetIds: [], provenanceRecorded: false, reasons: providerPreflight.reasons };
     }
 
+    const executionPlan: ProviderExecutionPlan = { request, compiledPrompt: request.prompt };
+    const estimate = provider.estimateCost ? await provider.estimateCost(executionPlan) : undefined;
+    const costDecision = evaluateCostPolicy(
+      { ...(request.outputRequirements.budgetCredits !== undefined ? { budgetCredits: request.outputRequirements.budgetCredits } : {}) },
+      estimate,
+      runOptions.costApproved === true
+    );
+    if (costDecision.status === "REQUIRES_APPROVAL") {
+      return {
+        status: "WAITING_APPROVAL",
+        providerId: provider.id,
+        assetIds: [],
+        costDecision,
+        provenanceRecorded: false,
+        reasons: costDecision.reasons
+      };
+    }
+
     let providerResult: ProviderResult;
     try {
-      providerResult = await provider.execute({ request, compiledPrompt: request.prompt });
+      providerResult = await provider.execute(executionPlan);
     } catch (error) {
-      return { status: "FAIL", providerId: provider.id, assetIds: [], provenanceRecorded: false, reasons: [error instanceof Error ? error.message : "PROVIDER_EXECUTION_FAILED"] };
+      return { status: "FAIL", providerId: provider.id, assetIds: [], costDecision, provenanceRecorded: false, reasons: [error instanceof Error ? error.message : "PROVIDER_EXECUTION_FAILED"] };
     }
 
     const qc = await this.options.qc.evaluate(request, providerResult, this.options.evaluators);
@@ -83,7 +105,10 @@ export class GenerationOrchestrator {
       providerId: providerResult.providerId,
       model: providerResult.model,
       ...(providerJobId ? { providerJobId } : {}),
-      parameters: {},
+      parameters: {
+        cost: costDecision.estimate ?? null,
+        costReasons: costDecision.reasons
+      },
       preflight,
       qc,
       repairHistory: repairPlan ? [{ action: repairPlan.action, reasons: repairPlan.reasons }] : [],
@@ -99,6 +124,7 @@ export class GenerationOrchestrator {
       assetIds: providerResult.assetIds,
       qc,
       ...(repairPlan ? { repairPlan } : {}),
+      costDecision,
       provenanceRecorded: true,
       reasons: []
     };
