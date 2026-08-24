@@ -1,4 +1,4 @@
-import type { AllowedChange, GenerationRequest, ReferenceLock, SourceAsset, TaskClass } from "../domain/types.js";
+import type { AllowedChange, GenerationRequest, ReferenceLock, SourceAsset, SourceRole, TaskClass } from "../domain/types.js";
 import type { ChatImageContractResult } from "./chat-image-contract.js";
 import type { WorkflowPreset } from "../presets/types.js";
 
@@ -12,13 +12,7 @@ function inferTaskClass(preset: WorkflowPreset): TaskClass {
 }
 
 export function compileContractWithPreset(contract: ChatImageContractResult, preset: WorkflowPreset): GenerationRequest {
-  const sourceAssets: SourceAsset[] = contract.images.map(image => ({
-    id: image.id,
-    uri: `chat://${image.id}`,
-    roles: contract.locks.some(l => l.assetId === image.id && l.type === "COMPOSITION") ? ["composition"] : ["scene"]
-  }));
-
-  const firstAssetId = sourceAssets[0]?.id;
+  const firstAssetId = contract.images[0]?.id;
   const requiredLocks: ReferenceLock[] = firstAssetId ? preset.requiredLocks
     .filter(req => !contract.locks.some(existing => existing.type === req.type))
     .map((req, index) => ({
@@ -29,6 +23,17 @@ export function compileContractWithPreset(contract: ChatImageContractResult, pre
       description: req.description,
       strength: req.strength
     })) : [];
+
+  const allLocks = [...contract.locks, ...requiredLocks];
+  const sourceAssets: SourceAsset[] = contract.images.map(image => {
+    const roles = new Set<SourceRole>();
+    const assetLocks = allLocks.filter(lock => lock.assetId === image.id);
+    if (assetLocks.some(lock => lock.type === "COMPOSITION")) roles.add("composition");
+    if (assetLocks.some(lock => lock.type === "IDENTITY")) roles.add("identity");
+    if (assetLocks.some(lock => lock.type === "FACE")) roles.add("face");
+    if (roles.size === 0) roles.add("scene");
+    return { id: image.id, uri: `chat://${image.id}`, roles: [...roles] };
+  });
 
   const allowedChanges: AllowedChange[] = contract.allowedTargets.map(target => ({
     target,
@@ -49,7 +54,7 @@ export function compileContractWithPreset(contract: ChatImageContractResult, pre
     operation,
     prompt: contract.rawText,
     sourceAssets,
-    locks: [...contract.locks, ...requiredLocks],
+    locks: allLocks,
     allowedChanges,
     forbiddenChanges: operation === "DELTA_EDIT" ? ["UNSPECIFIED_REGIONS"] : [],
     outputRequirements: {
@@ -62,6 +67,6 @@ export function compileContractWithPreset(contract: ChatImageContractResult, pre
     qualityTier: preset.defaultQualityTier,
     privacyMode: "REMOTE_ALLOWED",
     taskClass: inferTaskClass(preset),
-    requiredIdentitySupport: [...contract.locks, ...requiredLocks].some(l => l.type === "FACE" || l.type === "IDENTITY")
+    requiredIdentitySupport: allLocks.some(l => l.type === "FACE" || l.type === "IDENTITY")
   };
 }
