@@ -30,3 +30,4 @@ export * from "./assets/types.js";
 export * from "./assets/local-asset-registry.js";
 export * from "./cost/cost-policy.js";
 export * from "./jobs/job-registry.js";
+export * from "./jobs/generation-job-service.js";
