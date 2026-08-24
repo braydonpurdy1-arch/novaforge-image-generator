@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   FluxProvider,
+  GeminiImageProvider,
   HiggsfieldProvider,
   ModelRouter,
   OpenAiImageProvider,
@@ -28,12 +29,23 @@ const baseRequest: GenerationRequest = {
 describe("provider routing", () => {
   it("prefers Seedream for compatible photoreal still work", async () => {
     const seedream = new SeedreamProvider({ model: "seedream", transport });
-    const openai = new OpenAiImageProvider({ model: "gpt-image", transport });
-    const route = await new ModelRouter().route(baseRequest, [openai, seedream]);
+    const gemini = new GeminiImageProvider({ model: "gemini-3-pro-image", transport });
+    const route = await new ModelRouter().route(baseRequest, [gemini, seedream]);
     expect(route.providerId).toBe("seedream");
   });
 
-  it("routes typography work to a text-capable image provider", async () => {
+  it("prefers Gemini Pro Image for text-accurate typography", async () => {
+    const gemini = new GeminiImageProvider({ model: "gemini-3-pro-image", transport });
+    const openai = new OpenAiImageProvider({ model: "gpt-image", transport });
+    const route = await new ModelRouter().route({
+      ...baseRequest,
+      taskClass: "TYPOGRAPHY",
+      outputRequirements: { qualityTier: "MASTER", requiresTextAccuracy: true }
+    }, [openai, gemini]);
+    expect(route.providerId).toBe("gemini-image");
+  });
+
+  it("routes typography work to a text-capable provider when Gemini is absent", async () => {
     const seedream = new SeedreamProvider({ model: "seedream", transport });
     const openai = new OpenAiImageProvider({ model: "gpt-image", transport });
     const route = await new ModelRouter().route({
@@ -51,13 +63,14 @@ describe("provider routing", () => {
     expect(flux.capabilities().operations).toContain("OUTPAINT");
   });
 
-  it("keeps provider transports secret-free", async () => {
-    const calls: Record<string, unknown>[] = [];
+  it("keeps provider transports secret-free and defaults retention to UNKNOWN", async () => {
+    const calls: unknown[] = [];
     const seedream = new SeedreamProvider({
       model: "seedream",
       transport: async payload => { calls.push(payload); return { assetIds: ["asset-1"] }; }
     });
-    await seedream.execute({ request: baseRequest, compiledPrompt: "refinement only" });
+    const result = await seedream.execute({ request: baseRequest, compiledPrompt: "refinement only" });
     expect(JSON.stringify(calls[0])).not.toMatch(/apiKey|authorization|password/i);
+    expect(result.metadata.retention).toBe("UNKNOWN");
   });
 });
