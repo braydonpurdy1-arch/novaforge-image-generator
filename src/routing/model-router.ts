@@ -23,7 +23,9 @@ export class ModelRouter {
       let score = 0;
       const reasons: string[] = ["HARD_REQUIREMENTS_MATCH"];
       if (request.taskClass === "PHOTOREAL_STILL" && provider.kind === "SEEDREAM") { score += 20; reasons.push("SEEDREAM_PHOTOREAL_FIT"); }
-      if (request.taskClass === "TYPOGRAPHY" && c.supportsTextRendering) { score += 20; reasons.push("TYPOGRAPHY_FIT"); }
+      if (request.taskClass === "TYPOGRAPHY" && provider.kind === "GEMINI_IMAGE") { score += 20; reasons.push("GEMINI_TYPOGRAPHY_FIT"); }
+      else if (request.taskClass === "TYPOGRAPHY" && c.supportsTextRendering) { score += 20; reasons.push("TYPOGRAPHY_FIT"); }
+      if (request.outputRequirements.requiresTextAccuracy && provider.kind === "GEMINI_IMAGE") { score += 10; reasons.push("GEMINI_TEXT_ACCURACY_FIT"); }
       if (request.taskClass === "CINEMATIC_VIDEO" && c.supportsVideo) { score += 20; reasons.push("VIDEO_FIT"); }
       if (request.taskClass === "OUTPAINT" && c.operations.includes("OUTPAINT")) { score += 20; reasons.push("OUTPAINT_FIT"); }
       if (request.preferredProvider && (provider.id === request.preferredProvider || provider.kind?.toLowerCase() === request.preferredProvider.toLowerCase())) { score += 15; reasons.push("USER_PROVIDER_PREFERENCE"); }
