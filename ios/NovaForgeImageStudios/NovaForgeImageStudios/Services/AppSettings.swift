@@ -29,6 +29,7 @@ struct AppSettings: Codable, Equatable, Sendable {
 
 struct ValidatedEndpoint: Equatable, Sendable {
     let baseURL: URL
+    let isLocalDevelopment: Bool
 
     init(_ rawValue: String) throws {
         let clean = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -43,7 +44,8 @@ struct ValidatedEndpoint: Equatable, Sendable {
         }
 
         let localhostHosts = ["localhost", "127.0.0.1", "::1"]
-        guard scheme == "https" || (scheme == "http" && localhostHosts.contains(host)) else {
+        let isLocal = localhostHosts.contains(host)
+        guard scheme == "https" || (scheme == "http" && isLocal) else {
             throw EndpointValidationError.insecureRemoteURL
         }
 
@@ -54,6 +56,7 @@ struct ValidatedEndpoint: Equatable, Sendable {
         components.fragment = nil
         guard let url = components.url else { throw EndpointValidationError.invalidURL }
         baseURL = url
+        isLocalDevelopment = isLocal
     }
 
     func url(path: String) -> URL {

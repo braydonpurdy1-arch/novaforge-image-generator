@@ -149,7 +149,14 @@ final class AppModel {
 
     func saveConnection(endpointText: String, replacementToken: String) async throws {
         let cleanEndpoint = endpointText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !cleanEndpoint.isEmpty { _ = try ValidatedEndpoint(cleanEndpoint) }
+        if !cleanEndpoint.isEmpty {
+            let endpoint = try ValidatedEndpoint(cleanEndpoint)
+            let replacement = replacementToken.trimmingCharacters(in: .whitespacesAndNewlines)
+            let existingToken = try keychain.readAPIToken()
+            if !endpoint.isLocalDevelopment && replacement.isEmpty && existingToken == nil {
+                throw APIClientError.missingRemoteToken
+            }
+        }
         try await authorizer.authorize(reason: "Approve changing NovaForge connection security")
 
         settings.endpointText = cleanEndpoint
@@ -181,6 +188,9 @@ final class AppModel {
         }
         let endpoint = try ValidatedEndpoint(settings.endpointText)
         let token = try keychain.readAPIToken()
+        if !endpoint.isLocalDevelopment && token == nil {
+            throw APIClientError.missingRemoteToken
+        }
         let configuration = URLSessionConfiguration.ephemeral
         configuration.waitsForConnectivity = true
         configuration.timeoutIntervalForRequest = 30

@@ -89,6 +89,7 @@ private struct ServerError: Codable { let error: String }
 
 enum APIClientError: LocalizedError, Equatable {
     case notConfigured
+    case missingRemoteToken
     case invalidResponse
     case invalidPayload
     case server(status: Int, code: String)
@@ -96,6 +97,7 @@ enum APIClientError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .notConfigured: "Connect a NovaForge Core endpoint in Settings first."
+        case .missingRemoteToken: "A remote NovaForge Core endpoint requires a Keychain bearer token."
         case .invalidResponse: "NovaForge Core returned an invalid response."
         case .invalidPayload: "NovaForge Core returned data this app could not read."
         case .server(_, let code): "NovaForge Core refused the request: \(code)."

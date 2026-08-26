@@ -26,7 +26,7 @@ Simulator builds need no signing. For a physical iPhone or iPad, select the app 
 
 ## Security boundary
 
-- Remote endpoints must use HTTPS. Plain HTTP is accepted only for `localhost`, `127.0.0.1`, or `::1` development.
+- Remote endpoints must use HTTPS and a Keychain bearer token. Plain HTTP and tokenless development are accepted only for `localhost`, `127.0.0.1`, or `::1`.
 - Provider API keys do not belong in this app. The optional NovaForge bearer token is stored in Keychain.
 - Reference files are addressed in requests by `novaforge-asset://` opaque IDs; local filesystem paths are never serialized into generation payloads.
 - Reference media upload remains a trusted NovaForge Core integration responsibility. The current core API accepts generation contracts but does not yet expose an asset-ingestion endpoint.
