@@ -22,6 +22,7 @@ Native SwiftUI client for the NovaForge Image Studios orchestration core.
 - A configured NovaForge Core endpoint for generation. The app remains useful offline for building and saving request contracts.
 
 Open `NovaForgeImageStudios.xcodeproj`, select the `NovaForgeImageStudios` scheme, then run on a simulator or device.
+Simulator builds need no signing. For a physical iPhone or iPad, select the app target and choose an Apple development team before running.
 
 ## Security boundary
 
@@ -45,4 +46,3 @@ xcodebuild \
 ```
 
 Unit tests cover request/lock compilation, path redaction, endpoint security, API behaviour, persisted lock/date fidelity, and the rule that settings never persist an API-token field.
-
