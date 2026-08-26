@@ -30,6 +30,7 @@
 		A20000000000000000000002 /* EndpointValidationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* EndpointValidationTests.swift */; };
 		A20000000000000000000003 /* GenerationRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000003 /* GenerationRequestTests.swift */; };
 		A20000000000000000000004 /* LocalStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000004 /* LocalStoreTests.swift */; };
+		A20000000000000000000005 /* ApprovalGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000005 /* ApprovalGateTests.swift */; };
 		A30000000000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B30000000000000000000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -67,6 +68,7 @@
 		B20000000000000000000002 /* EndpointValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndpointValidationTests.swift; sourceTree = "<group>"; };
 		B20000000000000000000003 /* GenerationRequestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerationRequestTests.swift; sourceTree = "<group>"; };
 		B20000000000000000000004 /* LocalStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalStoreTests.swift; sourceTree = "<group>"; };
+		B20000000000000000000005 /* ApprovalGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovalGateTests.swift; sourceTree = "<group>"; };
 		B30000000000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Resources/Assets.xcassets; sourceTree = "<group>"; };
 		B30000000000000000000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Resources/Info.plist; sourceTree = "<group>"; };
 		D10000000000000000000001 /* NovaForgeImageStudios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NovaForgeImageStudios.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -123,6 +125,7 @@
 				B20000000000000000000002 /* EndpointValidationTests.swift */,
 				B20000000000000000000003 /* GenerationRequestTests.swift */,
 				B20000000000000000000004 /* LocalStoreTests.swift */,
+				B20000000000000000000005 /* ApprovalGateTests.swift */,
 			);
 			path = NovaForgeImageStudiosTests;
 			sourceTree = "<group>";
@@ -246,6 +249,7 @@
 				A20000000000000000000002 /* EndpointValidationTests.swift in Sources */,
 				A20000000000000000000003 /* GenerationRequestTests.swift in Sources */,
 				A20000000000000000000004 /* LocalStoreTests.swift in Sources */,
+				A20000000000000000000005 /* ApprovalGateTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
