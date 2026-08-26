@@ -28,16 +28,18 @@ struct ProjectLibraryView: View {
         }
         .background(CosmicBackground())
         .navigationTitle("Projects")
-        .alert("Delete local project?", item: $deleteCandidate) { project in
-            Button("Cancel", role: .cancel) {}
-            Button("Authenticate and delete", role: .destructive) {
-                Task {
-                    do { try await model.deleteProject(project) }
-                    catch { show(error) }
-                }
-            }
-        } message: { project in
-            Text("\"\(project.title)\" will be removed after owner authentication. Unreferenced source files follow the retention preference in Settings.")
+        .alert(item: $deleteCandidate) { project in
+            Alert(
+                title: Text("Delete local project?"),
+                message: Text("\"\(project.title)\" will be removed after owner authentication. Unreferenced source files follow the retention preference in Settings."),
+                primaryButton: .destructive(Text("Authenticate and delete")) {
+                    Task {
+                        do { try await model.deleteProject(project) }
+                        catch { show(error) }
+                    }
+                },
+                secondaryButton: .cancel()
+            )
         }
     }
 
