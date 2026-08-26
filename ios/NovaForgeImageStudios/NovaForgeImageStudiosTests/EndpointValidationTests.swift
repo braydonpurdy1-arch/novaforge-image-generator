@@ -4,7 +4,12 @@ import XCTest
 final class EndpointValidationTests: XCTestCase {
     func testHTTPSRemoteEndpointIsAllowed() throws {
         let endpoint = try ValidatedEndpoint("https://core.novaforgestudios.com/")
-        XCTAssertEqual(endpoint.baseURL.absoluteString, "https://core.novaforgestudios.com/")
+        XCTAssertEqual(endpoint.baseURL.absoluteString, "https://core.novaforgestudios.com")
+        XCTAssertEqual(endpoint.credentialScope, "https://core.novaforgestudios.com")
+        XCTAssertEqual(
+            endpoint.credentialScope,
+            try ValidatedEndpoint("https://core.novaforgestudios.com").credentialScope
+        )
         XCTAssertFalse(endpoint.isLocalDevelopment)
     }
 

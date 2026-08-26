@@ -30,6 +30,7 @@ struct AppSettings: Codable, Equatable, Sendable {
 struct ValidatedEndpoint: Equatable, Sendable {
     let baseURL: URL
     let isLocalDevelopment: Bool
+    var credentialScope: String { baseURL.absoluteString }
 
     init(_ rawValue: String) throws {
         let clean = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -51,6 +52,7 @@ struct ValidatedEndpoint: Equatable, Sendable {
 
         var path = components.path
         while path.count > 1 && path.hasSuffix("/") { path.removeLast() }
+        if path == "/" { path = "" }
         components.path = path
         components.query = nil
         components.fragment = nil

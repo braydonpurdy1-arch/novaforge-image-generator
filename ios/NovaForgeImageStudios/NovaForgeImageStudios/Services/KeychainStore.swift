@@ -4,18 +4,21 @@ import Security
 struct KeychainStore: Sendable {
     private let service = "com.novaforgestudios.imagestudios"
 
-    func saveAPIToken(_ token: String) throws {
+    func saveAPICredential(token: String, endpointScope: String) throws {
         let clean = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else {
-            try deleteAPIToken()
+            try deleteAPICredential()
             return
         }
 
-        let data = Data(clean.utf8)
+        let data = try JSONEncoder().encode(StoredAPICredential(
+            token: clean,
+            endpointScope: endpointScope
+        ))
         let baseQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: "novaforge-api-token"
+            kSecAttrAccount as String: "novaforge-api-credential-v1"
         ]
         SecItemDelete(baseQuery as CFDictionary)
 
@@ -26,11 +29,11 @@ struct KeychainStore: Sendable {
         guard status == errSecSuccess else { throw KeychainError.unhandled(status) }
     }
 
-    func readAPIToken() throws -> String? {
+    func readAPICredential() throws -> StoredAPICredential? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: "novaforge-api-token",
+            kSecAttrAccount as String: "novaforge-api-credential-v1",
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
@@ -38,18 +41,21 @@ struct KeychainStore: Sendable {
         let status = SecItemCopyMatching(query as CFDictionary, &result)
         if status == errSecItemNotFound { return nil }
         guard status == errSecSuccess,
-              let data = result as? Data,
-              let token = String(data: data, encoding: .utf8) else {
+              let data = result as? Data else {
             throw KeychainError.unhandled(status)
         }
-        return token
+        do {
+            return try JSONDecoder().decode(StoredAPICredential.self, from: data)
+        } catch {
+            throw KeychainError.invalidCredential
+        }
     }
 
-    func deleteAPIToken() throws {
+    func deleteAPICredential() throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: "novaforge-api-token"
+            kSecAttrAccount as String: "novaforge-api-credential-v1"
         ]
         let status = SecItemDelete(query as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else {
@@ -58,12 +64,19 @@ struct KeychainStore: Sendable {
     }
 }
 
+struct StoredAPICredential: Codable, Equatable, Sendable {
+    let token: String
+    let endpointScope: String
+}
+
 enum KeychainError: LocalizedError {
     case unhandled(OSStatus)
+    case invalidCredential
 
     var errorDescription: String? {
         switch self {
         case .unhandled(let status): "Secure storage failed (\(status))."
+        case .invalidCredential: "The stored NovaForge credential was invalid and was blocked."
         }
     }
 }

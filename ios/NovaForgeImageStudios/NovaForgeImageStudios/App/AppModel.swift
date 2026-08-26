@@ -39,7 +39,7 @@ final class AppModel {
         let loadedJobs = await savedJobs
         projects = loadedProjects.sorted { $0.updatedAt > $1.updatedAt }
         jobs = loadedJobs.sorted { $0.updatedAt > $1.updatedAt }
-        hasStoredToken = (try? keychain.readAPIToken()) != nil
+        hasStoredToken = credentialMatchesCurrentEndpoint()
         isBootstrapped = true
     }
 
@@ -149,28 +149,46 @@ final class AppModel {
 
     func saveConnection(endpointText: String, replacementToken: String) async throws {
         let cleanEndpoint = endpointText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !cleanEndpoint.isEmpty {
-            let endpoint = try ValidatedEndpoint(cleanEndpoint)
-            let replacement = replacementToken.trimmingCharacters(in: .whitespacesAndNewlines)
-            let existingToken = try keychain.readAPIToken()
-            if !endpoint.isLocalDevelopment && replacement.isEmpty && existingToken == nil {
-                throw APIClientError.missingRemoteToken
-            }
+        let endpoint = try ValidatedEndpoint(cleanEndpoint)
+        let replacement = replacementToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        let existingCredential = try keychain.readAPICredential()
+        let existingMatches = existingCredential?.endpointScope == endpoint.credentialScope
+        if !endpoint.isLocalDevelopment && replacement.isEmpty && !existingMatches {
+            throw APIClientError.missingRemoteToken
         }
         try await authorizer.authorize(reason: "Approve changing NovaForge connection security")
 
-        settings.endpointText = cleanEndpoint
-        try settings.save()
-        if !replacementToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            try keychain.saveAPIToken(replacementToken)
+        let previousSettings = settings
+        if !replacement.isEmpty {
+            try keychain.saveAPICredential(
+                token: replacement,
+                endpointScope: endpoint.credentialScope
+            )
         }
-        hasStoredToken = (try keychain.readAPIToken()) != nil
+        settings.endpointText = cleanEndpoint
+        do {
+            try settings.save()
+        } catch {
+            settings = previousSettings
+            if !replacement.isEmpty {
+                if let existingCredential {
+                    try? keychain.saveAPICredential(
+                        token: existingCredential.token,
+                        endpointScope: existingCredential.endpointScope
+                    )
+                } else {
+                    try? keychain.deleteAPICredential()
+                }
+            }
+            throw error
+        }
+        hasStoredToken = credentialMatchesCurrentEndpoint()
         notice = AppNotice(style: .success, message: "Connection settings saved securely.")
     }
 
     func disconnect() async throws {
         try await authorizer.authorize(reason: "Approve disconnecting NovaForge Core")
-        try keychain.deleteAPIToken()
+        try keychain.deleteAPICredential()
         settings.endpointText = ""
         try settings.save()
         hasStoredToken = false
@@ -187,7 +205,8 @@ final class AppModel {
             throw APIClientError.notConfigured
         }
         let endpoint = try ValidatedEndpoint(settings.endpointText)
-        let token = try keychain.readAPIToken()
+        let credential = try keychain.readAPICredential()
+        let token = credential?.endpointScope == endpoint.credentialScope ? credential?.token : nil
         if !endpoint.isLocalDevelopment && token == nil {
             throw APIClientError.missingRemoteToken
         }
@@ -209,6 +228,14 @@ final class AppModel {
             jobs.append(job)
         }
         jobs.sort { $0.updatedAt > $1.updatedAt }
+    }
+
+    private func credentialMatchesCurrentEndpoint() -> Bool {
+        guard let endpoint = try? ValidatedEndpoint(settings.endpointText),
+              let credential = try? keychain.readAPICredential() else {
+            return false
+        }
+        return credential.endpointScope == endpoint.credentialScope
     }
 }
 
