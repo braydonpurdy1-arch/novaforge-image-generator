@@ -22,7 +22,7 @@ final class APIClientTests: XCTestCase {
         StubURLProtocol.handler = { request in
             XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer top-secret")
             XCTAssertEqual(request.httpMethod, "POST")
-            let body = try XCTUnwrap(request.httpBody.flatMap { String(data: $0, encoding: .utf8) })
+            let body = try XCTUnwrap(String(data: requestBodyData(request), encoding: .utf8))
             XCTAssertFalse(body.contains("/Users/"))
             XCTAssertTrue(body.contains("novaforge-asset"))
             return (HTTPURLResponse(
@@ -93,6 +93,29 @@ final class APIClientTests: XCTestCase {
         } catch let error as APIClientError {
             XCTAssertEqual(error, .server(status: 409, code: "MODEL_UNAVAILABLE:required-model"))
             XCTAssertFalse(error.localizedDescription.contains("must-not-leak"))
+        }
+    }
+}
+
+private func requestBodyData(_ request: URLRequest) throws -> Data {
+    if let body = request.httpBody {
+        return body
+    }
+
+    let stream = try XCTUnwrap(request.httpBodyStream)
+    stream.open()
+    defer { stream.close() }
+
+    var data = Data()
+    var buffer = [UInt8](repeating: 0, count: 4_096)
+    while true {
+        let count = stream.read(&buffer, maxLength: buffer.count)
+        if count > 0 {
+            data.append(buffer, count: count)
+        } else if count == 0 {
+            return data
+        } else {
+            throw stream.streamError ?? APIClientError.invalidResponse
         }
     }
 }
