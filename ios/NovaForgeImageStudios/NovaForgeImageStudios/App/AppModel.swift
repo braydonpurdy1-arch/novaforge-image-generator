@@ -64,6 +64,12 @@ final class AppModel {
         try await authorizer.authorize(reason: "Approve deleting this NovaForge project")
         projects.removeAll { $0.id == project.id }
         try await projectStore.saveProjects(projects)
+        if !settings.keepOriginalReferences {
+            let retainedPaths = Set(projects.flatMap(\.references).map(\.relativeFilePath))
+            for reference in project.references where !retainedPaths.contains(reference.relativeFilePath) {
+                try? await assetStore.delete(reference)
+            }
+        }
         notice = AppNotice(style: .success, message: "Project removed from this device.")
     }
 

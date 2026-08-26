@@ -45,4 +45,21 @@ final class LocalStoreTests: XCTestCase {
         XCTAssertFalse(serialized.lowercased().contains("token"))
         XCTAssertEqual(AppSettings.load(defaults: defaults), settings)
     }
+
+    func testReferenceStoreDeletesOnlyTheExplicitAsset() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "novaforge-reference-tests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ReferenceAssetStore(baseDirectory: directory)
+        let first = try await store.importData(Data([1, 2, 3]), filename: "first.jpg")
+        let second = try await store.importData(Data([4, 5, 6]), filename: "second.jpg")
+
+        try await store.delete(first)
+
+        let referenceRoot = directory
+            .appending(path: "NovaForgeImageStudios", directoryHint: .isDirectory)
+            .appending(path: "References", directoryHint: .isDirectory)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: referenceRoot.appending(path: first.relativeFilePath).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: referenceRoot.appending(path: second.relativeFilePath).path))
+    }
 }

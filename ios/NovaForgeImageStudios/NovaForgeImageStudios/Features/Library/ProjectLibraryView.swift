@@ -37,7 +37,7 @@ struct ProjectLibraryView: View {
                 }
             }
         } message: { project in
-            Text("\"\(project.title)\" will be removed from this device after owner authentication. Source image files are retained for safe recovery in this first release.")
+            Text("\"\(project.title)\" will be removed after owner authentication. Unreferenced source files follow the retention preference in Settings.")
         }
     }
 
@@ -125,4 +125,3 @@ private struct ProjectCard: View {
         }
     }
 }
-

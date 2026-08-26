@@ -82,6 +82,12 @@ actor ReferenceAssetStore {
         )
     }
 
+    func delete(_ asset: ReferenceAssetDraft) throws {
+        let url = root.appending(path: asset.relativeFilePath)
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        try FileManager.default.removeItem(at: url)
+    }
+
     nonisolated static func url(for asset: ReferenceAssetDraft) -> URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         return base

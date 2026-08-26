@@ -12,6 +12,7 @@ struct StudioView: View {
     @State private var selectedItems: [PhotosPickerItem] = []
     @State private var reviewDraft: ProjectDraft?
     @State private var isImporting = false
+    @State private var confirmsNewProject = false
 
     var body: some View {
         ScrollView {
@@ -31,6 +32,30 @@ struct StudioView: View {
         .background(CosmicBackground())
         .navigationTitle("Image Studios")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    if draft.prompt.isEmpty && draft.references.isEmpty {
+                        resetDraft()
+                    } else {
+                        confirmsNewProject = true
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .accessibilityLabel("New project")
+            }
+        }
+        .confirmationDialog(
+            "Start a new project?",
+            isPresented: $confirmsNewProject,
+            titleVisibility: .visible
+        ) {
+            Button("Discard unsaved changes", role: .destructive) { resetDraft() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Save the current project first if you want to keep these edits.")
+        }
         .sheet(item: $reviewDraft) { selectedDraft in
             GenerationReviewView(draft: selectedDraft, onSubmitted: onSubmitted)
                 .environment(model)
@@ -373,6 +398,12 @@ struct StudioView: View {
 
     private func show(_ error: Error) {
         model.notice = AppNotice(style: .error, message: error.localizedDescription)
+    }
+
+    private func resetDraft() {
+        var replacement = ProjectDraft.blank
+        replacement.privacyMode = model.settings.defaultPrivacyMode
+        draft = replacement
     }
 }
 
