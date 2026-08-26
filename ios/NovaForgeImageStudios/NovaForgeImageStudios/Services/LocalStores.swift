@@ -83,24 +83,40 @@ actor ReferenceAssetStore {
     }
 
     func delete(_ asset: ReferenceAssetDraft) throws {
-        let url = root.appending(path: asset.relativeFilePath)
+        let url = try Self.validatedURL(root: root, relativePath: asset.relativeFilePath)
         guard FileManager.default.fileExists(atPath: url.path) else { return }
         try FileManager.default.removeItem(at: url)
     }
 
-    nonisolated static func url(for asset: ReferenceAssetDraft) -> URL {
+    static func url(for asset: ReferenceAssetDraft) -> URL? {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return base
+        let root = base
             .appending(path: "NovaForgeImageStudios", directoryHint: .isDirectory)
             .appending(path: "References", directoryHint: .isDirectory)
-            .appending(path: asset.relativeFilePath)
+        return try? validatedURL(root: root, relativePath: asset.relativeFilePath)
+    }
+
+    private static func validatedURL(root: URL, relativePath: String) throws -> URL {
+        guard !relativePath.isEmpty,
+              relativePath == URL(fileURLWithPath: relativePath).lastPathComponent,
+              !relativePath.contains("/"),
+              !relativePath.contains("\\") else {
+            throw ReferenceImportError.invalidStoredPath
+        }
+        return root.appending(path: relativePath)
     }
 }
 
 enum ReferenceImportError: LocalizedError {
     case emptyData
+    case invalidStoredPath
 
-    var errorDescription: String? { "The selected image did not contain readable data." }
+    var errorDescription: String? {
+        switch self {
+        case .emptyData: "The selected image did not contain readable data."
+        case .invalidStoredPath: "The stored reference path was invalid and was blocked."
+        }
+    }
 }
 
 private extension JSONEncoder {

@@ -38,6 +38,9 @@ struct ValidatedEndpoint: Equatable, Sendable {
               let host = components.host?.lowercased() else {
             throw EndpointValidationError.invalidURL
         }
+        guard components.user == nil, components.password == nil else {
+            throw EndpointValidationError.embeddedCredentials
+        }
 
         let localhostHosts = ["localhost", "127.0.0.1", "::1"]
         guard scheme == "https" || (scheme == "http" && localhostHosts.contains(host)) else {
@@ -62,11 +65,13 @@ struct ValidatedEndpoint: Equatable, Sendable {
 enum EndpointValidationError: LocalizedError, Equatable {
     case invalidURL
     case insecureRemoteURL
+    case embeddedCredentials
 
     var errorDescription: String? {
         switch self {
         case .invalidURL: "Enter a complete NovaForge Core URL."
         case .insecureRemoteURL: "Use HTTPS. Plain HTTP is allowed only for localhost development."
+        case .embeddedCredentials: "Do not put credentials in the URL. Store the bearer token in Keychain."
         }
     }
 }

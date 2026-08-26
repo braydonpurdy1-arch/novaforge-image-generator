@@ -85,8 +85,16 @@ final class AppModel {
         defer { isBusy = false }
         let job = try await client.submit(payload)
         upsert(job)
-        try await projectStore.saveJobs(jobs)
-        try await saveProject(draft)
+        do {
+            try await projectStore.saveJobs(jobs)
+            try await saveProject(draft)
+        } catch {
+            notice = AppNotice(
+                style: .neutral,
+                message: "Request submitted, but local tracking could not be fully saved: \(error.localizedDescription)"
+            )
+            return job
+        }
         notice = AppNotice(style: .success, message: "Approved request submitted.")
         return job
     }
@@ -117,7 +125,15 @@ final class AppModel {
         defer { isBusy = false }
         let updated = try await client.decideCost(jobID: job.jobId, approved: approved)
         upsert(updated)
-        try await projectStore.saveJobs(jobs)
+        do {
+            try await projectStore.saveJobs(jobs)
+        } catch {
+            notice = AppNotice(
+                style: .neutral,
+                message: "Cost decision completed, but local tracking could not be saved."
+            )
+            return
+        }
         notice = AppNotice(
             style: approved ? .success : .neutral,
             message: approved ? "Cost approved. Generation resumed." : "Cost rejected. Nothing was generated."
@@ -187,7 +203,7 @@ final class AppModel {
 }
 
 struct AppNotice: Identifiable, Equatable {
-    enum Style { case success, neutral, error }
+    enum Style: Equatable { case success, neutral, error }
 
     let id = UUID()
     let style: Style

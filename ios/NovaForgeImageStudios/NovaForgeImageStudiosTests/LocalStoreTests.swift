@@ -62,4 +62,23 @@ final class LocalStoreTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: referenceRoot.appending(path: first.relativeFilePath).path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: referenceRoot.appending(path: second.relativeFilePath).path))
     }
+
+    func testReferenceStoreBlocksPathTraversalOnDelete() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "novaforge-path-tests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ReferenceAssetStore(baseDirectory: directory)
+        let tampered = ReferenceAssetDraft(
+            displayName: "tampered",
+            relativeFilePath: "../outside.txt",
+            byteCount: 1
+        )
+
+        do {
+            try await store.delete(tampered)
+            XCTFail("Expected path validation to fail")
+        } catch let error as ReferenceImportError {
+            XCTAssertEqual(error.localizedDescription, ReferenceImportError.invalidStoredPath.localizedDescription)
+        }
+    }
 }

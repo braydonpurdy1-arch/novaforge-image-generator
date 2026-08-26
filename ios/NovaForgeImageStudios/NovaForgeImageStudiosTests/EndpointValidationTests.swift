@@ -21,5 +21,10 @@ final class EndpointValidationTests: XCTestCase {
             "https://example.com/core/v1/jobs/job_1"
         )
     }
-}
 
+    func testCredentialsCannotBeEmbeddedInPersistedEndpoint() {
+        XCTAssertThrowsError(try ValidatedEndpoint("https://owner:secret@example.com")) { error in
+            XCTAssertEqual(error as? EndpointValidationError, .embeddedCredentials)
+        }
+    }
+}

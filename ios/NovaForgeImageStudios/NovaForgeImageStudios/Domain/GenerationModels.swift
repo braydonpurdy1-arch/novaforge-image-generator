@@ -1,6 +1,6 @@
 import Foundation
 
-enum GenerationOperation: String, Codable, CaseIterable, Identifiable, Sendable {
+enum GenerationOperation: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case generate = "GENERATE"
     case edit = "EDIT"
     case deltaEdit = "DELTA_EDIT"
@@ -34,7 +34,7 @@ enum GenerationOperation: String, Codable, CaseIterable, Identifiable, Sendable 
     var needsReference: Bool { self != .generate }
 }
 
-enum ReferenceRole: String, Codable, CaseIterable, Identifiable, Sendable {
+enum ReferenceRole: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case identity
     case face
     case profile
@@ -62,7 +62,7 @@ enum ReferenceRole: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
-enum ReferenceLockType: String, Codable, CaseIterable, Identifiable, Sendable {
+enum ReferenceLockType: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case identity = "IDENTITY"
     case face = "FACE"
     case pose = "POSE"
@@ -84,7 +84,7 @@ enum ReferenceLockType: String, Codable, CaseIterable, Identifiable, Sendable {
     var title: String { rawValue.replacingOccurrences(of: "_", with: " ").capitalized }
 }
 
-enum LockStrength: String, Codable, CaseIterable, Identifiable, Sendable {
+enum LockStrength: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case hard = "HARD"
     case soft = "SOFT"
 
@@ -92,7 +92,7 @@ enum LockStrength: String, Codable, CaseIterable, Identifiable, Sendable {
     var title: String { rawValue.capitalized }
 }
 
-enum PrivacyMode: String, Codable, CaseIterable, Identifiable, Sendable {
+enum PrivacyMode: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case localOnly = "LOCAL_ONLY"
     case remoteRedacted = "REMOTE_REDACTED"
     case remoteAllowed = "REMOTE_ALLOWED"
@@ -116,7 +116,7 @@ enum PrivacyMode: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
-enum QualityTier: String, Codable, CaseIterable, Identifiable, Sendable {
+enum QualityTier: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case draft = "DRAFT"
     case standard = "STANDARD"
     case master = "MASTER"
@@ -125,7 +125,7 @@ enum QualityTier: String, Codable, CaseIterable, Identifiable, Sendable {
     var title: String { rawValue.capitalized }
 }
 
-enum TaskClass: String, Codable, Sendable {
+enum TaskClass: String, Codable, Hashable, Sendable {
     case photorealStill = "PHOTOREAL_STILL"
     case typography = "TYPOGRAPHY"
     case cinematicVideo = "CINEMATIC_VIDEO"
@@ -133,7 +133,7 @@ enum TaskClass: String, Codable, Sendable {
     case general = "GENERAL"
 }
 
-enum WorkflowPreset: String, Codable, CaseIterable, Identifiable, Sendable {
+enum WorkflowPreset: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case memorialPhotoreal = "MEMORIAL_PHOTOREAL"
     case lockedFaceEdit = "LOCKED_FACE_EDIT"
     case vehicleVisualizer = "VEHICLE_VISUALIZER"
@@ -190,7 +190,7 @@ enum WorkflowPreset: String, Codable, CaseIterable, Identifiable, Sendable {
     }
 }
 
-enum ProviderChoice: String, Codable, CaseIterable, Identifiable, Sendable {
+enum ProviderChoice: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
     case automatic
     case seedream
     case geminiImage = "gemini-image"
@@ -266,7 +266,7 @@ struct GenerationRequestPayload: Codable, Equatable, Sendable {
     let taskClass: TaskClass
 }
 
-enum JobState: String, Codable, CaseIterable, Sendable {
+enum JobState: String, Codable, CaseIterable, Hashable, Sendable {
     case queued = "QUEUED"
     case preflight = "PREFLIGHT"
     case waitingApproval = "WAITING_APPROVAL"
@@ -318,4 +318,3 @@ struct CachedAssetResponse: Codable, Equatable, Sendable {
     let assetId: String
     let localAvailable: Bool
 }
-

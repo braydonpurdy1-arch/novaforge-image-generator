@@ -81,10 +81,44 @@ struct GenerationReviewView: View {
                 ReviewRow(label: "Quality", value: draft.qualityTier.title)
                 ReviewRow(label: "Aspect", value: draft.aspectRatio)
                 ReviewRow(label: "Provider", value: draft.provider.title)
+                if draft.providerRequired {
+                    ReviewRow(label: "Fallback", value: "Forbidden")
+                }
+                if !draft.preferredModel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    ReviewRow(label: "Model", value: draft.preferredModel)
+                }
+                if !draft.budgetCreditsText.isEmpty {
+                    ReviewRow(label: "Budget", value: "\(draft.budgetCreditsText) credits")
+                }
                 Divider().overlay(theme.glassBorder)
                 Text(draft.prompt)
                     .font(.subheadline)
                     .foregroundStyle(.white)
+                if !draft.requestedTransformation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Divider().overlay(theme.glassBorder)
+                    Text("ALLOWED DELTA")
+                        .font(.caption2.weight(.bold))
+                        .tracking(1.4)
+                        .foregroundStyle(theme.electricBlue)
+                    Text("\(draft.requestedTarget): \(draft.requestedTransformation)")
+                        .font(.subheadline)
+                }
+                let forbidden = draft.forbiddenChangesText
+                    .split(whereSeparator: \.isNewline)
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+                if !forbidden.isEmpty {
+                    Divider().overlay(theme.glassBorder)
+                    Text("MUST NOT CHANGE")
+                        .font(.caption2.weight(.bold))
+                        .tracking(1.4)
+                        .foregroundStyle(theme.ember)
+                    ForEach(forbidden, id: \.self) { item in
+                        Label(item, systemImage: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(theme.secondaryText)
+                    }
+                }
             }
         }
     }

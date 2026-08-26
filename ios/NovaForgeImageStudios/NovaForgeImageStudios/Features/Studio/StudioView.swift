@@ -472,7 +472,8 @@ private struct ReferenceRow: View {
         .padding(13)
         .background(theme.elevated.opacity(0.6), in: RoundedRectangle(cornerRadius: 16))
         .task(id: reference.relativeFilePath) {
-            guard let data = try? Data(contentsOf: ReferenceAssetStore.url(for: reference)) else { return }
+            guard let url = ReferenceAssetStore.url(for: reference),
+                  let data = try? Data(contentsOf: url) else { return }
             image = UIImage(data: data)
         }
     }
