@@ -102,4 +102,3 @@ enum APIClientError: LocalizedError, Equatable {
         }
     }
 }
-

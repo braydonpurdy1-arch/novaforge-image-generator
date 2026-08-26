@@ -18,4 +18,3 @@ final class ForgeTheme {
     let cornerRadius: CGFloat = 22
     let cardPadding: CGFloat = 18
 }
-

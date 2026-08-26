@@ -210,4 +210,3 @@ private struct ReviewLine: View {
         .font(.caption)
     }
 }
-

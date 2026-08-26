@@ -94,4 +94,3 @@ struct StatusPill: View {
         .overlay { Capsule().stroke((color ?? theme.electricBlue).opacity(0.25)) }
     }
 }
-

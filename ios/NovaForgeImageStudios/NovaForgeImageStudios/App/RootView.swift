@@ -85,4 +85,3 @@ struct RootView: View {
         .environment(AppModel())
         .environment(ForgeTheme())
 }
-

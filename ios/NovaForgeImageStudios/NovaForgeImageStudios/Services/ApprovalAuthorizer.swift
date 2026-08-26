@@ -43,4 +43,3 @@ enum ApprovalError: LocalizedError, Equatable {
         }
     }
 }
-

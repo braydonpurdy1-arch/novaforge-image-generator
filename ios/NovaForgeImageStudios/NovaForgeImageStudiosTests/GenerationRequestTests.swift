@@ -66,4 +66,3 @@ final class GenerationRequestTests: XCTestCase {
         XCTAssertTrue(request.outputRequirements.requiresVideo)
     }
 }
-
