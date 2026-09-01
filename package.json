@@ -1,0 +1,19 @@
+{
+  "name": "novaforge-studios-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Safety-gated Wan 3.0, Lumina/Seedance, second-brain, and MCP gateway for NovaForge Studios.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test",
+    "check": "node --check src/server.js && node --check src/mcp.js && node --check src/providers.js && node --check src/memory.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.2",
+    "zod": "^3.25.76"
+  }
+}

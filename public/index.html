@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NovaForge Image Studios</title>
+    <style>
+      :root { color-scheme: dark; font: 16px/1.5 system-ui, sans-serif; background: #090d14; color: #e9f1ff; }
+      body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 20% 0, #172b50, transparent 42%), #090d14; }
+      main { width: min(860px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0; }
+      h1 { margin: 0; font-size: clamp(2rem, 7vw, 4rem); letter-spacing: -.05em; }
+      .lede { color: #a9b9d2; max-width: 62ch; }
+      .panel { margin-top: 28px; padding: 22px; border: 1px solid #29456d; border-radius: 18px; background: #101927d9; box-shadow: 0 20px 60px #0008; }
+      label { display: grid; gap: 7px; margin-top: 14px; color: #c7d5ea; }
+      input, textarea, select, button { box-sizing: border-box; width: 100%; border: 1px solid #36547e; border-radius: 10px; background: #0b1320; color: inherit; padding: 12px; font: inherit; }
+      textarea { min-height: 130px; resize: vertical; }
+      button { margin-top: 18px; background: linear-gradient(135deg, #5c8dff, #8b5cff); border: 0; font-weight: 700; cursor: pointer; }
+      button:disabled { filter: grayscale(1); opacity: .55; cursor: not-allowed; }
+      .confirm { grid-template-columns: auto 1fr; align-items: start; }
+      .confirm input { width: auto; margin-top: 5px; }
+      pre { white-space: pre-wrap; overflow-wrap: anywhere; color: #b7cae7; }
+      .status { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+      .provider { padding: 12px; border-radius: 12px; background: #0b1320; }
+      .ready { color: #70e6a2; } .disabled, .missing_configuration { color: #ffca72; }
+      small { color: #8095b4; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>NovaForge Studios</h1>
+      <p class="lede">One controlled surface for Wan 3.0 and Lumina/Seedance video jobs. Provider keys stay server-side, paid actions remain disabled by default, and every job needs a fresh confirmation.</p>
+
+      <section class="panel">
+        <h2>Connection</h2>
+        <label>Service token <input id="token" type="password" autocomplete="off" placeholder="Kept only for this browser tab" /></label>
+        <button id="load" type="button">Check providers</button>
+        <div id="providers" class="status"></div>
+      </section>
+
+      <form id="job" class="panel">
+        <h2>Create video</h2>
+        <label>Provider <select id="provider"><option value="wan3">Wan 3.0</option><option value="lumina">Lumina (Seedance)</option></select></label>
+        <label>Prompt <textarea id="prompt" maxlength="10000" required></textarea></label>
+        <label>Duration (2–30 seconds) <input id="duration" type="number" min="2" max="30" value="5" /></label>
+        <label>Aspect ratio <select id="ratio"><option>adaptive</option><option>16:9</option><option>9:16</option><option>1:1</option><option>4:3</option><option>3:4</option></select></label>
+        <label class="confirm"><input id="confirmed" type="checkbox" /><span>I confirm this sends the prompt to an external provider and may incur charges.</span></label>
+        <button type="submit">Create approved job</button>
+        <pre id="result" aria-live="polite"></pre>
+      </form>
+      <small>Antigravity and ChatGPT use the same service through <code>/mcp</code>. COG-inspired memory is proposal-first and is not exposed in this generation form.</small>
+    </main>
+    <script>
+      const token = document.querySelector('#token');
+      const result = document.querySelector('#result');
+      const providers = document.querySelector('#providers');
+      token.value = sessionStorage.getItem('novaforge-token') || '';
+      token.addEventListener('input', () => sessionStorage.setItem('novaforge-token', token.value));
+      const request = async (url, options = {}) => {
+        const response = await fetch(url, { ...options, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token.value}`, ...(options.headers || {}) } });
+        const data = await response.json();
+        if (!response.ok) throw new Error(`${data.error}: ${data.message || response.statusText}`);
+        return data;
+      };
+      document.querySelector('#load').addEventListener('click', async () => {
+        providers.textContent = 'Checking…';
+        try {
+          const data = await request('/api/providers');
+          const cards = data.providers.map((item) => {
+            const card = document.createElement('div');
+            card.className = 'provider';
+            const name = document.createElement('strong');
+            name.textContent = item.name;
+            const state = document.createElement('span');
+            state.className = ['ready', 'disabled', 'missing_configuration'].includes(item.status) ? item.status : '';
+            state.textContent = item.status.replace('_', ' ');
+            const model = document.createElement('small');
+            model.textContent = item.model;
+            card.append(name, document.createElement('br'), state, document.createElement('br'), model);
+            return card;
+          });
+          providers.replaceChildren(...cards);
+        } catch (error) { providers.textContent = error.message; }
+      });
+      document.querySelector('#job').addEventListener('submit', async (event) => {
+        event.preventDefault(); result.textContent = 'Submitting…';
+        try {
+          const data = await request('/api/jobs', { method: 'POST', body: JSON.stringify({
+            provider: document.querySelector('#provider').value,
+            prompt: document.querySelector('#prompt').value,
+            duration: Number(document.querySelector('#duration').value),
+            ratio: document.querySelector('#ratio').value,
+            confirmed: document.querySelector('#confirmed').checked,
+          }) });
+          result.textContent = JSON.stringify(data, null, 2);
+          document.querySelector('#confirmed').checked = false;
+        } catch (error) { result.textContent = error.message; }
+      });
+    </script>
+  </body>
+</html>
