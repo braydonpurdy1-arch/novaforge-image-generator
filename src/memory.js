@@ -29,7 +29,8 @@ function markdown(record) {
     `source: ${JSON.stringify(record.source)}`,
     `confidence: ${record.confidence}`,
     `created_at: ${record.createdAt}`,
-    `last_verified: ${record.lastVerified}`,
+    "verification_state: unverified",
+    "last_verified: null",
     `tags: ${JSON.stringify(record.tags)}`,
     "---",
     "",
@@ -57,7 +58,8 @@ export class SecondBrain {
       confidence: oneOf(input?.confidence, ["low", "medium", "high"], "confidence", "medium"),
       tags: cleanTags(input?.tags),
       createdAt: now.toISOString(),
-      lastVerified: now.toISOString(),
+      verificationState: "unverified",
+      lastVerified: null,
     };
     this.pending.set(record.id, { record, expiresAt: now.getTime() + this.proposalTtlMs });
     return { ...record, state: "proposed", expiresAt: new Date(now.getTime() + this.proposalTtlMs).toISOString() };
@@ -113,11 +115,19 @@ export class SecondBrain {
       const text = await readFile(path.join(this.root, name), "utf8");
       const index = text.toLowerCase().indexOf(query);
       if (index === -1) continue;
-      const title = text.match(/^title:\s*(.+)$/m)?.[1];
+      const rawTitle = text.match(/^title:\s*(.+)$/m)?.[1];
+      let title = name;
+      if (rawTitle) {
+        try {
+          title = JSON.parse(rawTitle);
+        } catch {
+          title = rawTitle.trim();
+        }
+      }
       const excerptStart = Math.max(0, index - 100);
       results.push({
         uri: `nova-memory://${name}`,
-        title: title ? JSON.parse(title) : name,
+        title,
         excerpt: text.slice(excerptStart, excerptStart + 500).replace(/\s+/g, " ").trim(),
       });
       if (results.length >= boundedLimit) break;

@@ -24,7 +24,8 @@ test("second-brain memories are proposal-first and source-stamped", async () => 
   const text = await readFile(path.join(root, filename), "utf8");
   assert.match(text, /source: "vf-ui security model"/);
   assert.match(text, /confidence: high/);
-  assert.match(text, /last_verified:/);
+  assert.match(text, /verification_state: unverified/);
+  assert.match(text, /last_verified: null/);
 
   const results = await brain.search("backend-only");
   assert.equal(results.length, 1);

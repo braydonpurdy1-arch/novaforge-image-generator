@@ -6,7 +6,7 @@ This repository is the controlled media and memory integration surface shared by
 
 - **Wan 3.0** through Alibaba Cloud Model Studio's asynchronous video API.
 - **Lumina (Seedance)** through Lumina's documented BytePlus ModelArk API path.
-- **COG-inspired second brain** using local Markdown, source/confidence/verification metadata, proposal-first writes, and explicit commit approval. This is a selective integration, not a wholesale copy of the COG repository.
+- **COG-inspired second brain** using local Markdown, source/confidence/verification metadata, proposal-first writes, and explicit commit approval. New entries remain `unverified` until a later memory-hygiene pass; this is a selective integration, not a wholesale copy of the COG repository.
 - **ChatGPT and Antigravity** through one Streamable HTTP MCP endpoint at `/mcp`.
 - A small same-origin NovaForge Image Studios web surface at `/`.
 
