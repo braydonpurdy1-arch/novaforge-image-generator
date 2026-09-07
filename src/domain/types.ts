@@ -64,6 +64,7 @@ export interface GenerationRequest {
   preferredProvider?: string;
   preferredModel?: string;
   providerRequired?: boolean;
+  modelRequired?: boolean;
   qualityTier: QualityTier;
   privacyMode: PrivacyMode;
   taskClass?: TaskClass;
@@ -94,6 +95,7 @@ export interface RawImageRequest {
   preferredProvider?: string;
   preferredModel?: string;
   providerRequired?: boolean;
+  modelRequired?: boolean;
   taskClass?: TaskClass;
 }
 

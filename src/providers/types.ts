@@ -26,6 +26,7 @@ export interface ImageProvider {
   locality: ProviderLocality;
   kind?: ProviderKind;
   capabilities(): ProviderCapabilities;
+  supportsModel(model: string): boolean;
   preflight(request: GenerationRequest): Promise<ProviderPreflight>;
   execute(plan: ProviderExecutionPlan): Promise<ProviderResult>;
   estimateCost?(plan: ProviderExecutionPlan): Promise<CostEstimate | undefined>;

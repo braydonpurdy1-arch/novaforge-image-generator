@@ -43,6 +43,7 @@ export class ReferencePolicyEngine {
       ...(raw.preferredProvider !== undefined ? { preferredProvider: raw.preferredProvider } : {}),
       ...(raw.preferredModel !== undefined ? { preferredModel: raw.preferredModel } : {}),
       ...(raw.providerRequired !== undefined ? { providerRequired: raw.providerRequired } : {}),
+      ...(raw.modelRequired !== undefined ? { modelRequired: raw.modelRequired } : {}),
       ...(raw.taskClass !== undefined ? { taskClass: raw.taskClass } : {})
     };
   }

@@ -9,6 +9,7 @@ export class OpenAiImageProvider implements ImageProvider {
   readonly kind="OPENAI_IMAGE" as const;
   readonly locality:"LOCAL"|"REMOTE";
   constructor(private readonly options:OpenAiImageProviderOptions){this.locality=options.locality??"REMOTE";}
+  supportsModel(model:string):boolean{return model===this.options.model;}
   capabilities():ProviderCapabilities{return{operations:["GENERATE","EDIT","DELTA_EDIT","INPAINT"],referenceRoles:["image"],supportsIdentityReferences:true,supportsTextRendering:true,supportsVideo:false,maxResolution:"4k",historicalQcRate:0.89,costRank:3,latencyRank:3};}
   async preflight(request:GenerationRequest):Promise<ProviderPreflight>{if(request.privacyMode==="LOCAL_ONLY"&&this.locality==="REMOTE")return{status:"BLOCKED_BY_POLICY",reasons:["LOCAL_ONLY"]};return this.capabilities().operations.includes(request.operation)?{status:"READY",reasons:[]}:{status:"UNSUPPORTED",reasons:["OPERATION_UNSUPPORTED"]};}
   async execute(plan:ProviderExecutionPlan):Promise<ProviderResult>{

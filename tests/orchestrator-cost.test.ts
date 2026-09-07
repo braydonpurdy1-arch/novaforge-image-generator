@@ -23,6 +23,7 @@ it("pauses before provider execution when estimated cost exceeds budget", async 
       supportsVideo: false,
       maxResolution: "4k"
     }),
+    supportsModel: model => model === "seedream",
     preflight: async () => ({ status: "READY", reasons: [] }),
     estimateCost: async () => ({ amount: 10, unit: "credits" }),
     execute: async () => {
