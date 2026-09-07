@@ -56,6 +56,39 @@ describe("provider routing", () => {
     expect(route.providerId).toBe("openai-image");
   });
 
+  it("routes an exact required provider only to its provider", async () => {
+    const seedream = new SeedreamProvider({ model: "seedream", transport });
+    const openai = new OpenAiImageProvider({ model: "gpt-image", transport });
+
+    const route = await new ModelRouter().route({
+      ...baseRequest,
+      preferredProvider: "openai-image",
+      providerRequired: true
+    }, [seedream, openai]);
+
+    expect(route.providerId).toBe("openai-image");
+    expect(route.reasons).toContain("REQUIRED_PROVIDER_MATCH");
+  });
+
+  it("fails closed when a required provider has no configured adapter", async () => {
+    const seedream = new SeedreamProvider({ model: "seedream", transport });
+
+    await expect(new ModelRouter().route({
+      ...baseRequest,
+      preferredProvider: "openai-image",
+      providerRequired: true
+    }, [seedream])).rejects.toThrow("PROVIDER_UNAVAILABLE:openai-image");
+  });
+
+  it("fails closed when providerRequired is set without a provider", async () => {
+    const seedream = new SeedreamProvider({ model: "seedream", transport });
+
+    await expect(new ModelRouter().route({
+      ...baseRequest,
+      providerRequired: true
+    }, [seedream])).rejects.toThrow("PROVIDER_REQUIRED_WITHOUT_PROVIDER");
+  });
+
   it("routes an exact required model only to its provider", async () => {
     const seedream = new SeedreamProvider({ model: "seedream", transport });
     const openai = new OpenAiImageProvider({ model: "gpt-image", transport });
@@ -103,7 +136,7 @@ describe("provider routing", () => {
     expect(route.providerId).toBe("seedream");
   });
 
-  it("recognizes both configured Gemini aliases and resolved model IDs", () => {
+  it("recognizes configured Gemini aliases", () => {
     const gemini = new GeminiImageProvider({ model: "gemini-3-pro-image", transport });
     expect(gemini.supportsModel("gemini-3-pro-image")).toBe(true);
   });
