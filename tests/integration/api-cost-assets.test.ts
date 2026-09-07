@@ -30,6 +30,7 @@ it("pauses an over-budget Seedream request, resumes after approval, and preserve
       supportsVideo: false,
       maxResolution: "4k"
     }),
+    supportsModel: model => model === "seedream",
     preflight: async () => ({ status: "READY", reasons: [] }),
     estimateCost: async () => ({ amount: 35, unit: "credits" }),
     execute: async () => {
