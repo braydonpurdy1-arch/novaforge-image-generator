@@ -24,6 +24,10 @@ export class GeminiImageProvider implements ImageProvider {
     this.modelId = descriptor.modelId;
   }
 
+  supportsModel(model: string): boolean {
+    return model === this.options.model || model === this.modelId;
+  }
+
   capabilities(): ProviderCapabilities {
     return {
       operations: ["GENERATE", "EDIT", "DELTA_EDIT", "INPAINT"],
