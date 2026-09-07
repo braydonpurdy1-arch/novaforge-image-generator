@@ -14,6 +14,7 @@ Important request semantics:
 
 - `privacyMode` may be `LOCAL_ONLY`, `REMOTE_REDACTED`, or `REMOTE_ALLOWED`.
 - A required provider/model is a hard constraint. If unavailable, the request fails rather than silently substituting another provider.
+- Setting `providerRequired=true` without `preferredProvider`, or `modelRequired=true` without `preferredModel`, is invalid and fails closed before scoring.
 - A preferred provider/model is a scoring preference only when all hard requirements remain satisfiable.
 - Explicit identity/composition/object/background/clothing locks are deterministic NovaForge policy and cannot be relaxed by a model response.
 - A request budget may trigger `WAITING_APPROVAL` before any paid execution occurs.
@@ -104,13 +105,16 @@ Provider routing is capability-first and task-fit scored. No provider is selecte
 Representative deterministic errors include:
 
 - `NO_COMPATIBLE_PROVIDER`
+- `PROVIDER_REQUIRED_WITHOUT_PROVIDER`
+- `PROVIDER_UNAVAILABLE:<provider>`
+- `MODEL_REQUIRED_WITHOUT_MODEL`
 - `MODEL_UNAVAILABLE:<model>`
 - `GEMINI_IMAGE_MODEL_REQUIRED:<model>`
 - `GEMINI_REASONING_MODEL_REQUIRED:<model>`
 - `INVALID_JOB_TRANSITION`
 - `SECRET_FIELD_REJECTED`
 
-Required-model failure, privacy-policy conflict, hard-lock QC failure, and invalid state transitions are fail-closed conditions.
+Required-provider/model failure, privacy-policy conflict, hard-lock QC failure, and invalid state transitions are fail-closed conditions.
 
 ## Production integration note
 
