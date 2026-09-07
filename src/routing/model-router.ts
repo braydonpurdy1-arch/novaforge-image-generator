@@ -4,12 +4,21 @@ import type { ImageProvider, RoutingDecision } from "../providers/types.js";
 const resolutionRank = (resolution: "1k" | "2k" | "4k"): number =>
   resolution === "4k" ? 3 : resolution === "2k" ? 2 : 1;
 
+const matchesProvider = (provider: ImageProvider, preferredProvider: string): boolean =>
+  provider.id === preferredProvider ||
+  provider.kind?.toLowerCase() === preferredProvider.toLowerCase();
+
 export class ModelRouter {
   async route(
     request: GenerationRequest,
     providers: ImageProvider[]
   ): Promise<RoutingDecision> {
+    const preferredProvider = request.preferredProvider?.trim();
     const preferredModel = request.preferredModel?.trim();
+
+    if (request.providerRequired && !preferredProvider) {
+      throw new Error("PROVIDER_REQUIRED_WITHOUT_PROVIDER");
+    }
 
     if (request.modelRequired && !preferredModel) {
       throw new Error("MODEL_REQUIRED_WITHOUT_MODEL");
@@ -17,8 +26,18 @@ export class ModelRouter {
 
     let eligibleProviders = providers;
 
+    if (request.providerRequired && preferredProvider) {
+      eligibleProviders = eligibleProviders.filter(provider =>
+        matchesProvider(provider, preferredProvider)
+      );
+
+      if (eligibleProviders.length === 0) {
+        throw new Error(`PROVIDER_UNAVAILABLE:${preferredProvider}`);
+      }
+    }
+
     if (request.modelRequired && preferredModel) {
-      eligibleProviders = providers.filter(provider =>
+      eligibleProviders = eligibleProviders.filter(provider =>
         provider.supportsModel(preferredModel)
       );
 
@@ -64,15 +83,6 @@ export class ModelRouter {
         request.requiredReferenceRoles?.some(
           role => !c.referenceRoles.includes(role as never)
         )
-      ) {
-        return false;
-      }
-
-      if (
-        request.providerRequired &&
-        request.preferredProvider &&
-        provider.id !== request.preferredProvider &&
-        provider.kind?.toLowerCase() !== request.preferredProvider.toLowerCase()
       ) {
         return false;
       }
@@ -136,14 +146,15 @@ export class ModelRouter {
       }
 
       if (
-        request.preferredProvider &&
-        (
-          provider.id === request.preferredProvider ||
-          provider.kind?.toLowerCase() === request.preferredProvider.toLowerCase()
-        )
+        preferredProvider &&
+        matchesProvider(provider, preferredProvider)
       ) {
         score += 15;
-        reasons.push("USER_PROVIDER_PREFERENCE");
+        reasons.push(
+          request.providerRequired
+            ? "REQUIRED_PROVIDER_MATCH"
+            : "USER_PROVIDER_PREFERENCE"
+        );
       }
 
       if (
