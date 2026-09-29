@@ -3,6 +3,7 @@ import { lockedFaceEditPreset } from "./locked-face-edit.js";
 import { vehicleVisualizerPreset } from "./vehicle-visualizer.js";
 import { posterTypographyPreset } from "./poster-typography.js";
 import { stillToVideoCinematicPreset } from "./still-to-video-cinematic.js";
+import { novaforgeLockedCharacterMasterPreset } from "./novaforge-locked-character.js";
 import type { PresetId, WorkflowPreset } from "./types.js";
 
 export class PresetRegistry {
@@ -11,7 +12,8 @@ export class PresetRegistry {
     [lockedFaceEditPreset.id, lockedFaceEditPreset],
     [vehicleVisualizerPreset.id, vehicleVisualizerPreset],
     [posterTypographyPreset.id, posterTypographyPreset],
-    [stillToVideoCinematicPreset.id, stillToVideoCinematicPreset]
+    [stillToVideoCinematicPreset.id, stillToVideoCinematicPreset],
+    [novaforgeLockedCharacterMasterPreset.id, novaforgeLockedCharacterMasterPreset]
   ]);
   list(): WorkflowPreset[] { return [...this.presets.values()]; }
   get(id: PresetId): WorkflowPreset {
