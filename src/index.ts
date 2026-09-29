@@ -40,3 +40,5 @@ export * from "./cost/cost-policy.js";
 export * from "./jobs/job-registry.js";
 export * from "./jobs/generation-job-service.js";
 export * from "./api/server.js";
+
+export * from "./research/huggingface-visual-candidates.js";
