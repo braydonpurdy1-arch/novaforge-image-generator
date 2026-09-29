@@ -49,7 +49,7 @@ export interface NovaForgeVisualProfile {
   };
 }
 
-export const NOVAFORGE_VISUAL_PROFILE: NovaForgeVisualProfile = Object.freeze({
+export const NOVAFORGE_VISUAL_PROFILE = Object.freeze({
   schemaVersion: 1,
   profileId: NOVAFORGE_VISUAL_PROFILE_ID,
   principles: {
@@ -77,4 +77,4 @@ export const NOVAFORGE_VISUAL_PROFILE: NovaForgeVisualProfile = Object.freeze({
     lighting: "cinematic volumetric light with coherent shadows and reflections",
     output: "highest practical resolution with artifact-aware sharpening"
   }
-});
+} satisfies NovaForgeVisualProfile);
