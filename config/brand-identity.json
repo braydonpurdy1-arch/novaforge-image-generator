@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "organization": "NovaForge Studios",
+  "domain": "novaforgestudios.com",
+  "publicInbox": {
+    "display": "Nova@NovaForgeStudios.com",
+    "canonical": "nova@novaforgestudios.com",
+    "identity": "Nova",
+    "role": "main-public-inbox"
+  },
+  "founder": {
+    "role": "Founder / CEO",
+    "workEmail": "braydon@novaforgestudios.com"
+  },
+  "policy": {
+    "defaultPublicContact": "nova@novaforgestudios.com",
+    "useFounderEmailForGeneralPublicContact": false,
+    "publicIdentityIsNova": true
+  }
+}
